@@ -7,6 +7,6 @@
 - [x] Running the application
 
 ### Second:
-- [ ] Be able to render a template
-- [ ] Access query parameters
-- [ ] Dynamically display query parameters
+- [x] Be able to render a template
+- [x] Access query parameters
+- [x] Dynamically display query parameters
