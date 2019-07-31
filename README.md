@@ -24,3 +24,8 @@
 - [x] Create simple search UI
 - [x] Return data from server
 - [x] Dynamically Present data to the user
+
+### Second:
+- [x] Query data from calssify2 API
+- [x] Decode the XML response
+- [x] Display the results

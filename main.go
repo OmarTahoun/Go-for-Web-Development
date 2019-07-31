@@ -8,14 +8,27 @@ import (
   "database/sql"
   _ "github.com/mattn/go-sqlite3"
   "encoding/json"
+  "encoding/xml"
+  "net/url"
+  "io/ioutil"
 )
+
+type query struct {
+  Text string
+  DBStatus bool
+}
 
 // A structure that handles the results of the search
 type searchResult struct {
-  Title string
-  Author string
-  Year string
-  ID string
+  Title string  `xml:"title,attr"`
+  Author string `xml:"author,attr"`
+  Year string   `xml:"hyr,attr"`
+  ID string     `xml:"wi,attr"`
+}
+
+// A slice of the response content
+type SearchResponse struct {
+  Results []searchResult `xml:"works>work"`
 }
 
 // A simple function that checks for error given an error object and a response object
@@ -26,6 +39,29 @@ func checkErr(err error, w http.ResponseWriter)  {
 }
 
 
+// A function that communicates with the classify2 api with the user's query
+func search(query string) ([]searchResult, error){
+  var resp *http.Response
+  var err error
+  // Checking the response
+  if resp, err = http.Get("http://classify.oclc.org/classify2/Classify?&summary=true&title="+url.QueryEscape(query)); err != nil{
+     return []searchResult{}, err
+  }
+
+  defer resp.Body.Close()
+  var body []byte
+
+  // Reading the content of the response
+  if body, err = ioutil.ReadAll(resp.Body); err != nil{
+    return []searchResult{}, err
+  }
+
+  // Parsing the xml response
+  var content SearchResponse
+  err = xml.Unmarshal(body, &content)
+
+  return content.Results, err
+}
 
 func main() {
   // Parsing all the templates we have
@@ -54,17 +90,15 @@ func main() {
   })
 
   //  Handeling the route to the /search route
-  http.HandleFunc("/search", func (w http.ResponseWriter, r *http.Request) {
-    results := []searchResult{
-      searchResult{"Oliver-Twist", "Charles dicknes", "1985", "QA19.08"},
-      searchResult{"Tales of two Cities", "William shakspear", "1589", "ZA19.08"},
-      searchResult{"Macbeth", "William Shakespeer", "1763", "FD17.48"},
-    }
+  http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
+    var results []searchResult
+    var err error
 
-
+    results, err = search(r.FormValue("search"))
+    checkErr(err, w)
     encoder := json.NewEncoder(w)
     // Converting the results object into json
-    err := encoder.Encode(results)
+    err = encoder.Encode(results)
     checkErr(err, w)
   })
 
