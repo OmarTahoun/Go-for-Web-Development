@@ -10,3 +10,8 @@
 - [x] Be able to render a template
 - [x] Access query parameters
 - [x] Dynamically display query parameters
+
+### Third:
+- [x] Setup a database for development
+- [x] create database connection on the server
+- [x] Display connection status using template

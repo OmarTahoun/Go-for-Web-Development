@@ -6,5 +6,13 @@
   </head>
   <body>
     <h3>Hi, Welcome to {{.Text}}</h3>
+
+    <h5>Check the DB Status...</h5>
+
+    {{if .DBStatus}}
+      <p>Connected to the database succesfully</p>
+    {{else}}
+      <p>Failed to Connect to the database</p>
+    {{end}}
   </body>
 </html>
