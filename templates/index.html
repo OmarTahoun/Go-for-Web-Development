@@ -3,6 +3,13 @@
   <head>
     <meta charset="utf-8">
     <title>Step 2 YOOOOOOOOOOOOOOOOOOOOOOOOOOOO</title>
+
+    <style media="screen">
+      #search-result tr:hover{
+        background-color: rgb(60,179,113);
+        cursor: pointer;
+      }
+    </style>
   </head>
   <body>
     <form id="search-form" onsubmit="return false">
@@ -40,10 +47,16 @@
                   var resultTable = $("#search-result");
                   resultTable.empty();
 
-                  parsed.forEach(function(result){
-                    var row = $("<tr><td>" + result.Title + "</td><td>" + result.Author + "</td><td>" + result.Year + "</td><td>" + result.ID + "</td></tr>");
-                    resultTable.append(row)
-                  })
+                  parsed.forEach(function(result) {
+                    var row = $("<tr><td>" + result.Title + "</td><td>" + result.Author + "</td><td>" + result.Year +  "</td><td>" + result.ID + "</td></tr>");
+                    resultTable.append(row);
+                    row.on("click", function() {
+                      $.ajax({
+                        url: "/books/add?id=" + result.ID,
+                        method: "GET"
+                      })
+                    })
+                  });
                 }
               });
 

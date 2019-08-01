@@ -29,3 +29,8 @@
 - [x] Query data from calssify2 API
 - [x] Decode the XML response
 - [x] Display the results
+
+### Third:
+- [x] Add books to database
+- [x] send selected book to server
+- [x] save the selection
