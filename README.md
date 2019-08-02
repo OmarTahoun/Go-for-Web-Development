@@ -36,6 +36,6 @@
 - [x] save the selection
 
 ### Fourth:
-- [ ] Install web middleware
-- [ ] Replace the default server with negrorni
-- [ ] Create a database checker middleware
+- [x] Install web middleware
+- [x] Replace the default server with negrorni
+- [x] Create a database checker middleware

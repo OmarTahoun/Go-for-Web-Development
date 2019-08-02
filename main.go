@@ -1,7 +1,6 @@
 package main
 
 import (
-  "fmt"
   "net/http"
   "html/template"
 
@@ -11,12 +10,16 @@ import (
   "encoding/xml"
   "net/url"
   "io/ioutil"
+  "github.com/codegangsta/negroni"
 )
+
+var database *sql.DB
 
 type query struct {
   Text string
   DBStatus bool
 }
+
 
 // A structure that handles the results of the search
 type SearchResult struct {
@@ -53,73 +56,76 @@ func checkErr(err error, w http.ResponseWriter)  {
   }
 }
 
-// A function that communicates with the classify2 api with the user's query
-func search(query string) ([]SearchResult, error){
+
+// A middle ware to check if the database connection is stable or not.
+func verifyDatabase(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)  {
+  if err := database.Ping(); err != nil{
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+  next(w,r)
+}
+
+
+// Sending a query to the API
+func callAPI(url string) ([]byte, error)  {
   var resp *http.Response
   var err error
   // Checking the response
-  if resp, err = http.Get("http://classify.oclc.org/classify2/Classify?summary=true&title="+url.QueryEscape(query)); err != nil{
-     return []SearchResult{}, err
+  if resp, err = http.Get(url); err != nil{
+     return []byte{}, err
   }
-
   defer resp.Body.Close()
-  var body []byte
+  return ioutil.ReadAll(resp.Body)
+}
 
-  // Reading the content of the response
-  if body, err = ioutil.ReadAll(resp.Body); err != nil{
+
+// A function that communicates with the classify2 api with the user's query
+func search(query string) ([]SearchResult, error){
+  var content SearchResponse
+  body, err := callAPI("http://classify.oclc.org/classify2/Classify?summary=true&title=" + url.QueryEscape(query))
+  if err != nil{
     return []SearchResult{}, err
   }
-
   // Parsing the xml response
-  var content SearchResponse
   err = xml.Unmarshal(body, &content)
-
+  // Returning the books information to be added to the table
   return content.Results, err
 }
 
 
 // Find a book by a given id (when user clicks on book from search resul)
 func findBook(id string) (BookResponse, error) {
-  var resp *http.Response
-  var err error
-  // Checking the response
-  if resp, err = http.Get("http://classify.oclc.org/classify2/Classify?summary=true&owi="+url.QueryEscape(id)); err != nil{
-     return BookResponse{}, err
-  }
-
-  defer resp.Body.Close()
-  var body []byte
-
-  // Reading the content of the response
-  if body, err = ioutil.ReadAll(resp.Body); err != nil{
-    return BookResponse{}, err
-  }
-
-  // Parsing the xml response
   var content BookResponse
+  body, err := callAPI("http://classify.oclc.org/classify2/Classify?summary=true&owi=" + url.QueryEscape(id))
+  if err != nil{
+    return content, err
+  }
+  // Parsing the xml response
   err = xml.Unmarshal(body, &content)
-
   // Returning the book's information to be added to the database
   return content, err
 }
 
 
+
+// MAIN FUNCTION
 func main() {
   // Parsing all the templates we have
   temps :=template.Must(template.ParseFiles("templates/index.html"))
-  database, _ := sql.Open("sqlite3", "./dev.db")
+  // Estaplishing connection with our database
+  database, _ = sql.Open("sqlite3", "./dev.db")
+  mux := http.NewServeMux()
 
-  // Handeling our route
-  http.HandleFunc("/",func (w http.ResponseWriter, r *http.Request) {
+  // Handeling the main route
+  mux.HandleFunc("/",func (w http.ResponseWriter, r *http.Request) {
     // Getting the query
     q := query{Text: "chillis"}
     text := r.FormValue("text")
-
     // Checking if the query is not empty to replace the default text
     if text != "" {
         q.Text = text
     }
-
     // checking the status of our connection
     q.DBStatus = database.Ping() == nil
     // Executing or renderin the template providing the query recieved
@@ -127,8 +133,9 @@ func main() {
     checkErr(err, w)
   })
 
-  //  Handeling the route to the /search route
-  http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
+
+  //  Handeling the searche route
+  mux.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
     var results []SearchResult
     var err error
 
@@ -140,13 +147,11 @@ func main() {
     checkErr(err, w)
   })
 
+
   // Handeling adding books to the data base
-  http.HandleFunc("/books/add", func (w http.ResponseWriter, r *http.Request) {
+  mux.HandleFunc("/books/add", func (w http.ResponseWriter, r *http.Request) {
     // Get the data of the selected book
     book, err := findBook(r.FormValue("id"))
-    checkErr(err, w)
-
-    err = database.Ping()
     checkErr(err, w)
 
     // Inseting the book to the database
@@ -156,6 +161,12 @@ func main() {
     statement.Exec(nil, book.BookData.Title, book.BookData.Author, book.BookData.ID, book.Classification.MostPopular)
     checkErr(err,w)
   })
+
+
+
+  n := negroni.Classic()
+  n.Use(negroni.HandlerFunc(verifyDatabase))
+  n.UseHandler(mux)
   //  Listining to the port
-  fmt.Println(http.ListenAndServe(":8080", nil))
+  n.Run(":8080")
 }
