@@ -34,3 +34,8 @@
 - [x] Add books to database
 - [x] send selected book to server
 - [x] save the selection
+
+### Fourth:
+- [ ] Install web middleware
+- [ ] Replace the default server with negrorni
+- [ ] Create a database checker middleware
