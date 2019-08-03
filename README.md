@@ -39,3 +39,10 @@
 - [x] Install web middleware
 - [x] Replace the default server with negrorni
 - [x] Create a database checker middleware
+
+## Section 3:
+
+### First:
+- [ ] add a new template engine
+- [ ] use the new engine to render the template
+- [ ] update the template file
