@@ -1,39 +1,27 @@
-<!DOCTYPE html>
-<html lang="en" dir="ltr">
-  <head>
-    <meta charset="utf-8">
-    <title>Step 2 YOOOOOOOOOOOOOOOOOOOOOOOOOOOO</title>
-
-    <style media="screen">
+= doctype html
+html
+  head
+    = css
       #search-result tr:hover{
         background-color: rgb(60,179,113);
         cursor: pointer;
       }
-    </style>
-  </head>
-  <body>
-    <form id="search-form" onsubmit="return false">
-      <input type="text" name="search">
-      <input type="submit" name="search" value="search" onclick="searchSubmit()">
-    </form>
-    <br>
-    <table width = "100%">
-      <thead>
-        <tr style="text-align:left;">
-          <th width="45%">Title</th>
-          <th width="40%">Author</th>
-          <th width="5%">Year</th>
-          <th width="10%">ID</th>
-        </tr>
-      </thead>
-      <tbody id="search-result">
-      </tbody>
-    </table>
+  body
+    form id="search-form" onsubmit="return false"
+      input type="text" name="search"
+      input type="submit" name="search" value="search" onclick="searchSubmit()"
 
+    table width="100%"
+      thead
+        tr style="text-align: left;"
+          th width="45%" Title
+          th width="40%" Author
+          th width="5%" Year
+          th width="10%" ID
+      tbody id="search-result"
 
-
-    <script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.js"></script>
-    <script type="text/javascript">
+    script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.js"
+    = javascript
             function searchSubmit() {
               $.ajax({
                 url: "/search",
@@ -62,6 +50,3 @@
 
               return false;
             }
-    </script>
-  </body>
-</html>

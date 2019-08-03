@@ -43,6 +43,6 @@
 ## Section 3:
 
 ### First:
-- [ ] add a new template engine
-- [ ] use the new engine to render the template
-- [ ] update the template file
+- [x] add a new template engine
+- [x] use the new engine to render the template
+- [x] update the template file

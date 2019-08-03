@@ -2,8 +2,6 @@ package main
 
 import (
   "net/http"
-  "html/template"
-
   "database/sql"
   _ "github.com/mattn/go-sqlite3"
   "encoding/json"
@@ -11,6 +9,7 @@ import (
   "net/url"
   "io/ioutil"
   "github.com/codegangsta/negroni"
+  "github.com/yosssi/ace"
 )
 
 var database *sql.DB
@@ -111,14 +110,14 @@ func findBook(id string) (BookResponse, error) {
 
 // MAIN FUNCTION
 func main() {
-  // Parsing all the templates we have
-  temps :=template.Must(template.ParseFiles("templates/index.html"))
   // Estaplishing connection with our database
   database, _ = sql.Open("sqlite3", "./dev.db")
   mux := http.NewServeMux()
 
   // Handeling the main route
   mux.HandleFunc("/",func (w http.ResponseWriter, r *http.Request) {
+    template, err := ace.Load("templates/index", "", nil)
+    checkErr(err, w)
     // Getting the query
     q := query{Text: "chillis"}
     text := r.FormValue("text")
@@ -129,7 +128,7 @@ func main() {
     // checking the status of our connection
     q.DBStatus = database.Ping() == nil
     // Executing or renderin the template providing the query recieved
-    err := temps.ExecuteTemplate(w, "index.html", q)
+    err = template.Execute(w, q)
     checkErr(err, w)
   })
 
