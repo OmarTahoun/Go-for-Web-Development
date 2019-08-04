@@ -2,47 +2,52 @@
 ## This application is digital library application.
 
 
-## Section 1:
-  ### First:
-  - [x] Write the main method
-  - [x] Create the first route
-  - [x] Running the application
+## Hello:
+### first route:
+- [x] Write the main method
+- [x] Create the first route
+- [x] Running the application
 
-  ### Second:
-  - [x] Be able to render a template
-  - [x] Access query parameters
-  - [x] Dynamically display query parameters
+### templates:
+- [x] Be able to render a template
+- [x] Access query parameters
+- [x] Dynamically display query parameters
 
-  ### Third:
-  - [x] Setup a database for development
-  - [x] create database connection on the server
-  - [x] Display connection status using template
+### Database connection:
+- [x] Setup a database for development
+- [x] create database connection on the server
+- [x] Display connection status using template
 
-## Section 2:
+## Collecting books:
 
-### First:
+### talking to the server:
 - [x] Create simple search UI
 - [x] Return data from server
 - [x] Dynamically Present data to the user
 
-### Second:
+### surfing the net:
 - [x] Query data from calssify2 API
 - [x] Decode the XML response
 - [x] Display the results
 
-### Third:
+### using database:
 - [x] Add books to database
 - [x] send selected book to server
 - [x] save the selection
 
-### Fourth:
+### web middleware:
 - [x] Install web middleware
 - [x] Replace the default server with negrorni
 - [x] Create a database checker middleware
 
-## Section 3:
+## Becoming the librarian:
 
-### First:
+### Replacing the default template:
 - [x] add a new template engine
 - [x] use the new engine to render the template
 - [x] update the template file
+
+### Showing off our books:
+- [ ] Update the page object
+- [ ] Modify Template
+- [ ] retrieve books from Database

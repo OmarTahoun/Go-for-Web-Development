@@ -14,9 +14,14 @@ import (
 
 var database *sql.DB
 
-type query struct {
-  Text string
-  DBStatus bool
+type book struct {
+  pk int
+  Title string
+  Author string
+  classification string
+}
+type page struct {
+  Books []book{}
 }
 
 
@@ -119,7 +124,7 @@ func main() {
     template, err := ace.Load("templates/index", "", nil)
     checkErr(err, w)
     // Getting the query
-    q := query{Text: "chillis"}
+    p := page{Books []book{}}
     text := r.FormValue("text")
     // Checking if the query is not empty to replace the default text
     if text != "" {
