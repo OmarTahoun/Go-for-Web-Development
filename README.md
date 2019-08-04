@@ -48,6 +48,6 @@
 - [x] update the template file
 
 ### Showing off our books:
-- [ ] Update the page object
-- [ ] Modify Template
-- [ ] retrieve books from Database
+- [x] Update the page object
+- [x] Modify Template
+- [x] retrieve books from Database

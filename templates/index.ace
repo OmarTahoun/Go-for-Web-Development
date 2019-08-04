@@ -1,12 +1,30 @@
+
 = doctype html
 html
-  head
-    = css
-      #search-result tr:hover{
-        background-color: rgb(60,179,113);
-        cursor: pointer;
-      }
-  body
+head
+  = css
+    #search-result tr:hover{
+      background-color: rgb(60,179,113);
+      cursor: pointer;
+    }
+
+    #page-switcher{
+      width: 100%;
+      text-align: center;
+    }
+
+    #page-switcher button{
+      font-size: 24px;
+      font-weight: bold;
+      margin: 1em;
+      padding: .3em;
+    }
+body
+  div#page-switcher
+    button onclick="showViewPage()" View Library
+    button onclick="showSearchPAge()" Add Books
+
+  div#search-page style="display:none"
     form id="search-form" onsubmit="return false"
       input type="text" name="search"
       input type="submit" name="search" value="search" onclick="searchSubmit()"
@@ -20,33 +38,64 @@ html
           th width="10%" ID
       tbody id="search-result"
 
-    script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.js"
-    = javascript
-            function searchSubmit() {
+  div#view-page
+    table width="100%"
+      thead
+        tr style="text-align: left;"
+          th width="45%" Title
+          th width="35%" Author
+          th width="20%" Classification
+      tbody id="view-result"
+        {{range .Books}}
+          tr
+            td {{.Title}}
+            td {{.Author}}
+            td {{.Class}}
+        {{end}}
+
+  script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.js"
+  = javascript
+    function showSearchPAge() {
+      $("#search-page").show();
+      $("#view-page").hide();
+    }
+
+    function showViewPage() {
+      $("#search-page").hide();
+      $("#view-page").show();
+    }
+
+    function searchSubmit() {
+      $.ajax({
+        url: "/search",
+        method: "POST",
+        data: $("#search-form").serialize(),
+        success: function(rawData){
+          var parsed = JSON.parse(rawData);
+
+          if(!parsed) return
+
+          var resultTable = $("#search-result");
+          resultTable.empty();
+
+          parsed.forEach(function(result) {
+            var row = $("<tr><td>" + result.Title + "</td><td>" + result.Author + "</td><td>" + result.Year +  "</td><td>" + result.ID + "</td></tr>");
+            resultTable.append(row);
+            row.on("click", function() {
               $.ajax({
-                url: "/search",
-                method: "POST",
-                data: $("#search-form").serialize(),
-                success: function(rawData){
-                  var parsed = JSON.parse(rawData);
-
-                  if(!parsed) return
-
-                  var resultTable = $("#search-result");
-                  resultTable.empty();
-
-                  parsed.forEach(function(result) {
-                    var row = $("<tr><td>" + result.Title + "</td><td>" + result.Author + "</td><td>" + result.Year +  "</td><td>" + result.ID + "</td></tr>");
-                    resultTable.append(row);
-                    row.on("click", function() {
-                      $.ajax({
-                        url: "/books/add?id=" + result.ID,
-                        method: "GET"
-                      })
-                    })
-                  });
+                url: "/books/add?id=" + result.ID,
+                method: "GET",
+                success: function(data) {
+                  var b = JSON.parse(data);
+                  if (!b) return;
+                  var viewTable = $("#view-result");
+                  viewTable.append("<tr><td>" + b.Title + "</td><td>" + b.Author + "</td><td>" + b.Class + "</td></tr>");
                 }
-              });
+              })
+            })
+          });
+        }
+      });
 
-              return false;
-            }
+      return false;
+    }

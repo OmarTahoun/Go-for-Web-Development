@@ -14,14 +14,15 @@ import (
 
 var database *sql.DB
 
-type book struct {
+type Book struct {
   pk int
   Title string
   Author string
-  classification string
+  Class string
 }
+
 type page struct {
-  Books []book{}
+  Books []Book
 }
 
 
@@ -124,16 +125,16 @@ func main() {
     template, err := ace.Load("templates/index", "", nil)
     checkErr(err, w)
     // Getting the query
-    p := page{Books []book{}}
-    text := r.FormValue("text")
-    // Checking if the query is not empty to replace the default text
-    if text != "" {
-        q.Text = text
+    p := page{Books: []Book{}}
+    rows, err := database.Query("select pk, title, author, class from books")
+    checkErr(err, w)
+    for rows.Next() {
+      var b Book
+      rows.Scan(&b.pk, &b.Title, &b.Author, &b.Class)
+      p.Books = append(p.Books, b)
     }
-    // checking the status of our connection
-    q.DBStatus = database.Ping() == nil
     // Executing or renderin the template providing the query recieved
-    err = template.Execute(w, q)
+    err = template.Execute(w, p)
     checkErr(err, w)
   })
 
@@ -162,8 +163,17 @@ func main() {
     statement, err := database.Prepare("INSERT INTO books (pk, title, author, id, class) VALUES (?, ?, ?, ?, ?)")
     checkErr(err, w)
 
-    statement.Exec(nil, book.BookData.Title, book.BookData.Author, book.BookData.ID, book.Classification.MostPopular)
+    result, err := statement.Exec(nil, book.BookData.Title, book.BookData.Author, book.BookData.ID, book.Classification.MostPopular)
     checkErr(err,w)
+
+    pk, _ := result.LastInsertId()
+    b := Book{
+      pk: int(pk),
+      Title: book.BookData.Title,
+      Author: book.BookData.Author,
+      Class: book.Classification.MostPopular}
+    err = json.NewEncoder(w).Encode(b)
+    checkErr(err, w)
   })
 
 
