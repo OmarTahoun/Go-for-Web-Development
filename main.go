@@ -15,7 +15,7 @@ import (
 var database *sql.DB
 
 type Book struct {
-  pk int
+  PK int
   Title string
   Author string
   Class string
@@ -130,7 +130,7 @@ func main() {
     checkErr(err, w)
     for rows.Next() {
       var b Book
-      rows.Scan(&b.pk, &b.Title, &b.Author, &b.Class)
+      rows.Scan(&b.PK, &b.Title, &b.Author, &b.Class)
       p.Books = append(p.Books, b)
     }
     // Executing or renderin the template providing the query recieved
@@ -168,7 +168,7 @@ func main() {
 
     pk, _ := result.LastInsertId()
     b := Book{
-      pk: int(pk),
+      PK: int(pk),
       Title: book.BookData.Title,
       Author: book.BookData.Author,
       Class: book.Classification.MostPopular}
@@ -176,7 +176,13 @@ func main() {
     checkErr(err, w)
   })
 
-
+  mux.HandleFunc("/books/delete", func (w http.ResponseWriter, r *http.Request) {
+    statement, err:= database.Prepare("delete from books where pk = ?")
+    checkErr(err, w)
+    _ , err = statement.Exec(r.FormValue("pk"))
+    checkErr(err, w)
+    w.WriteHeader(http.StatusOK)
+  })
 
   n := negroni.Classic()
   n.Use(negroni.HandlerFunc(verifyDatabase))

@@ -1,10 +1,10 @@
-
 = doctype html
 html
 head
   = css
-    #search-result tr:hover{
-      background-color: rgb(60,179,113);
+    #search-result tr:hover,
+    #view-result tr:hover {
+      background-color: grey;
       cursor: pointer;
     }
 
@@ -13,12 +13,20 @@ head
       text-align: center;
     }
 
-    #page-switcher button{
+    #page-switcher button {
       font-size: 24px;
       font-weight: bold;
       margin: 1em;
       padding: .3em;
     }
+
+    .delete-btn {
+      color: white;
+      background-color: red;
+      border-color: red;
+      border-radius: 8px;
+    }
+
 body
   div#page-switcher
     button onclick="showViewPage()" View Library
@@ -44,13 +52,16 @@ body
         tr style="text-align: left;"
           th width="45%" Title
           th width="35%" Author
-          th width="20%" Classification
+          th width="15%" Classification
+          th width="5%"
       tbody id="view-result"
         {{range .Books}}
-          tr
+          tr id="book-row-{{.PK}}"
             td {{.Title}}
             td {{.Author}}
             td {{.Class}}
+            td
+              button.delete-btn onclick="deleteBook({{.PK}})" Delete
         {{end}}
 
   script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.js"
@@ -63,6 +74,16 @@ body
     function showViewPage() {
       $("#search-page").hide();
       $("#view-page").show();
+    }
+
+    function deleteBook(pk) {
+        $.ajax({
+          url: "/books/delete?pk="+pk,
+          method:"GET",
+          success: function(){
+            $("#book-row-" + pk).remove();
+          }
+        });
     }
 
     function searchSubmit() {
@@ -89,7 +110,7 @@ body
                   var b = JSON.parse(data);
                   if (!b) return;
                   var viewTable = $("#view-result");
-                  viewTable.append("<tr><td>" + b.Title + "</td><td>" + b.Author + "</td><td>" + b.Class + "</td></tr>");
+                  viewTable.append("<tr id='book-row-"+b.pk+"'><td>" + b.Title + "</td><td>" + b.Author + "</td><td>" + b.Class + "</td><td><button class = 'delete-btn' onclick='deleteBook(" + b.pk + ")'>Delete</button></td></tr>");
                 }
               })
             })

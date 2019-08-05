@@ -53,6 +53,6 @@
 - [x] retrieve books from Database
 
 ### Removing Books:
-- [ ] adding a remove button
-- [ ] delete selected books from the database
-- [ ] update the interface 
+- [x] adding a remove button
+- [x] delete selected books from the database
+- [x] update the interface 
