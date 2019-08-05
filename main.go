@@ -10,6 +10,7 @@ import (
   "io/ioutil"
   "github.com/codegangsta/negroni"
   "github.com/yosssi/ace"
+  gmux "github.com/gorilla/mux"
 )
 
 var database *sql.DB
@@ -118,7 +119,7 @@ func findBook(id string) (BookResponse, error) {
 func main() {
   // Estaplishing connection with our database
   database, _ = sql.Open("sqlite3", "./dev.db")
-  mux := http.NewServeMux()
+  mux := gmux.NewRouter()
 
   // Handeling the main route
   mux.HandleFunc("/",func (w http.ResponseWriter, r *http.Request) {
@@ -136,7 +137,7 @@ func main() {
     // Executing or renderin the template providing the query recieved
     err = template.Execute(w, p)
     checkErr(err, w)
-  })
+  }).Methods("GET")
 
 
   //  Handeling the searche route
@@ -150,11 +151,11 @@ func main() {
     // Converting the results object into json
     err = encoder.Encode(results)
     checkErr(err, w)
-  })
+  }).Methods("POST")
 
 
   // Handeling adding books to the data base
-  mux.HandleFunc("/books/add", func (w http.ResponseWriter, r *http.Request) {
+  mux.HandleFunc("/books", func (w http.ResponseWriter, r *http.Request) {
     // Get the data of the selected book
     book, err := findBook(r.FormValue("id"))
     checkErr(err, w)
@@ -174,15 +175,15 @@ func main() {
       Class: book.Classification.MostPopular}
     err = json.NewEncoder(w).Encode(b)
     checkErr(err, w)
-  })
+  }).Methods("PUT")
 
-  mux.HandleFunc("/books/delete", func (w http.ResponseWriter, r *http.Request) {
+  mux.HandleFunc("/books/{pk}", func (w http.ResponseWriter, r *http.Request) {
     statement, err:= database.Prepare("delete from books where pk = ?")
     checkErr(err, w)
-    _ , err = statement.Exec(r.FormValue("pk"))
+    _ , err = statement.Exec(gmux.Vars(r)["pk"])
     checkErr(err, w)
     w.WriteHeader(http.StatusOK)
-  })
+  }).Methods("DELETE")
 
   n := negroni.Classic()
   n.Use(negroni.HandlerFunc(verifyDatabase))

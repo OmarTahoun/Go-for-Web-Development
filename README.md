@@ -55,4 +55,9 @@
 ### Removing Books:
 - [x] adding a remove button
 - [x] delete selected books from the database
-- [x] update the interface 
+- [x] update the interface
+
+### Using gorilla/mux for routing
+- [x] Install gmux
+- [x] replace default router
+- [x] Update routes

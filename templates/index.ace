@@ -78,8 +78,8 @@ body
 
     function deleteBook(pk) {
         $.ajax({
-          url: "/books/delete?pk="+pk,
-          method:"GET",
+          url: "/books/"+ pk ,
+          method:"DELETE",
           success: function(){
             $("#book-row-" + pk).remove();
           }
@@ -104,8 +104,8 @@ body
             resultTable.append(row);
             row.on("click", function() {
               $.ajax({
-                url: "/books/add?id=" + result.ID,
-                method: "GET",
+                url: "/books?id=" + result.ID,
+                method: "PUT",
                 success: function(data) {
                   var b = JSON.parse(data);
                   if (!b) return;
