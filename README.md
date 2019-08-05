@@ -51,3 +51,8 @@
 - [x] Update the page object
 - [x] Modify Template
 - [x] retrieve books from Database
+
+### Removing Books:
+- [ ] adding a remove button
+- [ ] delete selected books from the database
+- [ ] update the interface 
