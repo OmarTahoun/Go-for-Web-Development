@@ -8,18 +8,19 @@ import (
   "encoding/xml"
   "net/url"
   "io/ioutil"
+  "strconv"
   "github.com/codegangsta/negroni"
   "github.com/yosssi/ace"
   gmux "github.com/gorilla/mux"
+  "gopkg.in/gorp.v1"
 )
 
-var database *sql.DB
-
 type Book struct {
-  PK int
-  Title string
-  Author string
-  Class string
+  PK int64 `db:"pk"`
+  Title string `db:"title"`
+  Author string `db:"author"`
+  Class string  `db:"class"`
+  ID string `db:"id"`
 }
 
 type page struct {
@@ -114,11 +115,21 @@ func findBook(id string) (BookResponse, error) {
 }
 
 
+var database *sql.DB
+var dbmap *gorp.DbMap
+
+func initDB()  {
+  database, _ = sql.Open("sqlite3", "dev.db")
+  dbmap = &gorp.DbMap{Db: database, Dialect: gorp.SqliteDialect{}}
+
+  dbmap.AddTableWithName(Book{}, "books").SetKeys(true, "pk")
+  dbmap.CreateTablesIfNotExists()
+}
 
 // MAIN FUNCTION
 func main() {
   // Estaplishing connection with our database
-  database, _ = sql.Open("sqlite3", "./dev.db")
+  initDB()
   mux := gmux.NewRouter()
 
   // Handeling the main route
@@ -127,13 +138,8 @@ func main() {
     checkErr(err, w)
     // Getting the query
     p := page{Books: []Book{}}
-    rows, err := database.Query("select pk, title, author, class from books")
+    _, err = dbmap.Select(&p.Books, "select * from books")
     checkErr(err, w)
-    for rows.Next() {
-      var b Book
-      rows.Scan(&b.PK, &b.Title, &b.Author, &b.Class)
-      p.Books = append(p.Books, b)
-    }
     // Executing or renderin the template providing the query recieved
     err = template.Execute(w, p)
     checkErr(err, w)
@@ -161,26 +167,21 @@ func main() {
     checkErr(err, w)
 
     // Inseting the book to the database
-    statement, err := database.Prepare("INSERT INTO books (pk, title, author, id, class) VALUES (?, ?, ?, ?, ?)")
-    checkErr(err, w)
-
-    result, err := statement.Exec(nil, book.BookData.Title, book.BookData.Author, book.BookData.ID, book.Classification.MostPopular)
-    checkErr(err,w)
-
-    pk, _ := result.LastInsertId()
     b := Book{
-      PK: int(pk),
+      PK: -1,
       Title: book.BookData.Title,
       Author: book.BookData.Author,
-      Class: book.Classification.MostPopular}
+      Class: book.Classification.MostPopular,
+    }
+    err = dbmap.Insert(&b)
+    checkErr(err,w)
     err = json.NewEncoder(w).Encode(b)
     checkErr(err, w)
   }).Methods("PUT")
 
   mux.HandleFunc("/books/{pk}", func (w http.ResponseWriter, r *http.Request) {
-    statement, err:= database.Prepare("delete from books where pk = ?")
-    checkErr(err, w)
-    _ , err = statement.Exec(gmux.Vars(r)["pk"])
+    pk, _ := strconv.ParseInt(gmux.Vars(r)["pk"], 10, 64)
+    _, err := dbmap.Delete(&Book{pk,"","","",""})
     checkErr(err, w)
     w.WriteHeader(http.StatusOK)
   }).Methods("DELETE")

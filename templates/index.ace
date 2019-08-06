@@ -110,7 +110,7 @@ body
                   var b = JSON.parse(data);
                   if (!b) return;
                   var viewTable = $("#view-result");
-                  viewTable.append("<tr id='book-row-"+b.pk+"'><td>" + b.Title + "</td><td>" + b.Author + "</td><td>" + b.Class + "</td><td><button class = 'delete-btn' onclick='deleteBook(" + b.pk + ")'>Delete</button></td></tr>");
+                  viewTable.append("<tr id='book-row-"+b.PK+"'><td>" + b.Title + "</td><td>" + b.Author + "</td><td>" + b.Class + "</td><td><button class = 'delete-btn' onclick='deleteBook(" + b.PK + ")'>Delete</button></td></tr>");
                 }
               })
             })

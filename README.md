@@ -39,7 +39,7 @@
   - [x] Install web middleware
   - [x] Replace the default server with negrorni
   - [x] Create a database checker middleware
-  
+
 
 ## Becoming the librarian
 
@@ -66,6 +66,6 @@
 
 ## A place for everything
 - ### Using go-grop:
-  - [ ] Get go-gorp
-  - [ ] Setup database map
-  - [ ] Update the sql queries to use map
+  - [x] Get go-gorp
+  - [x] Setup database map
+  - [x] Update the sql queries to use map
