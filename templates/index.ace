@@ -3,7 +3,8 @@ html
 head
   = css
     #search-result tr:hover,
-    #view-result tr:hover {
+    #view-result tr:hover,
+    #view-page th:hover {
       background-color: grey;
       cursor: pointer;
     }
@@ -50,9 +51,9 @@ body
     table width="100%"
       thead
         tr style="text-align: left;"
-          th width="45%" Title
-          th width="35%" Author
-          th width="15%" Classification
+          th width="45%" onclick="sortBooks('title')" Title
+          th width="35%" onclick="sortBooks('author')" Author
+          th width="15%" onclick="sortBooks('class')" Classification
           th width="5%"
       tbody id="view-result"
         {{range .Books}}
@@ -83,6 +84,22 @@ body
           success: function(){
             $("#book-row-" + pk).remove();
           }
+        });
+    }
+
+    function sortBooks(sortBy) {
+        $.ajax({
+            url:"/books?sortBy="+sortBy,
+            method:"GET",
+            success : function(data){
+                var books = JSON.parse(data);
+                if(!books) return;
+                var viewTable = $("#view-result");
+                viewTable.empty();
+                books.forEach(function(b){
+                    viewTable.append("<tr id='book-row-"+b.PK+"'><td>" + b.Title + "</td><td>" + b.Author + "</td><td>" + b.Class + "</td><td><button class = 'delete-btn' onclick='deleteBook(" + b.PK + ")'>Delete</button></td></tr>")
+                });
+            }
         });
     }
 

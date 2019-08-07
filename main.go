@@ -9,7 +9,9 @@ import (
   "net/url"
   "io/ioutil"
   "strconv"
-  "github.com/codegangsta/negroni"
+  "github.com/urfave/negroni"
+  "github.com/goincremental/negroni-sessions"
+  "github.com/goincremental/negroni-sessions/cookiestore"
   "github.com/yosssi/ace"
   gmux "github.com/gorilla/mux"
   "gopkg.in/gorp.v1"
@@ -57,7 +59,7 @@ type SearchResponse struct {
 
 
 // A simple function that checks for error given an error object and a response object
-func checkErr(err error, w http.ResponseWriter)  {
+func checkErr(err error, w http.ResponseWriter){
   if err != nil{
     http.Error(w, err.Error(), http.StatusInternalServerError)
   }
@@ -126,6 +128,17 @@ func initDB()  {
   dbmap.CreateTablesIfNotExists()
 }
 
+
+func getBookCollection(books *[]Book, sortCol string, w http.ResponseWriter) bool {
+  if sortCol != "title" && sortCol != "author" && sortCol != "class"{
+    sortCol = "pk"
+  }
+  if _, err := dbmap.Select(books, "select * from books order by " + sortCol); err!=nil{
+    return false
+  }
+  return true
+}
+
 // MAIN FUNCTION
 func main() {
   // Estaplishing connection with our database
@@ -138,8 +151,14 @@ func main() {
     checkErr(err, w)
     // Getting the query
     p := page{Books: []Book{}}
-    _, err = dbmap.Select(&p.Books, "select * from books")
-    checkErr(err, w)
+    var sortCol string
+    sortBy := sessions.GetSession(r).Get("sortBy")
+    if sortBy != nil{
+      sortCol = sortBy.(string)
+    }
+    if !getBookCollection(&p.Books, sortCol, w){
+      return
+    }
     // Executing or renderin the template providing the query recieved
     err = template.Execute(w, p)
     checkErr(err, w)
@@ -186,7 +205,20 @@ func main() {
     w.WriteHeader(http.StatusOK)
   }).Methods("DELETE")
 
+  mux.HandleFunc("/books", func (w http.ResponseWriter, r *http.Request) {
+    var b []Book
+    sortBy := r.FormValue("sortBy")
+    if !getBookCollection(&b, sortBy, w){
+      return
+    }
+    sessions.GetSession(r).Set("sortBy",sortBy)
+
+    err := json.NewEncoder(w).Encode(b)
+    checkErr(err, w)
+  }).Methods("GET")
+
   n := negroni.Classic()
+  n.Use(sessions.Sessions("your-Library", cookiestore.New([]byte("this-is-safe"))))
   n.Use(negroni.HandlerFunc(verifyDatabase))
   n.UseHandler(mux)
   //  Listining to the port

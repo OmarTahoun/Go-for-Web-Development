@@ -71,6 +71,6 @@
   - [x] Update the sql queries to use map
 
 - ### Sortring our books:
-  - [ ] Adding the sort UI
-  - [ ] update database query to use sorting
-  - [ ] remember the latest sort method in sessions
+  - [x] Adding the sort UI
+  - [x] update database query to use sorting
+  - [x] remember the latest sort method in sessions
