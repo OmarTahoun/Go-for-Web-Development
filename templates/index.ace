@@ -48,6 +48,11 @@ body
       tbody id="search-result"
 
   div#view-page
+    form#filter-results style="float: right;"
+      select name="filterBy" style="font-size: 18px; min-width= 10em;" onchange="filterResults()"
+        option value="all" All Books
+        option value="fiction" Fiction
+        option value="nonfiction" Non-Fiction
     table width="100%"
       thead
         tr style="text-align: left;"
@@ -67,6 +72,10 @@ body
 
   script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.js"
   = javascript
+    $(document).ready(function(){
+        $("#filter-results option[value = '"+{{.Filter}}+"']").prop("selected", true);
+    });
+
     function showSearchPAge() {
       $("#search-page").show();
       $("#view-page").hide();
@@ -94,6 +103,25 @@ body
             success : function(data){
                 var books = JSON.parse(data);
                 if(!books) return;
+                var viewTable = $("#view-result");
+                viewTable.empty();
+                books.forEach(function(b){
+                    viewTable.append("<tr id='book-row-"+b.PK+"'><td>" + b.Title + "</td><td>" + b.Author + "</td><td>" + b.Class + "</td><td><button class = 'delete-btn' onclick='deleteBook(" + b.PK + ")'>Delete</button></td></tr>")
+                });
+            }
+        });
+    }
+
+    function filterResults(){
+        $.ajax({
+            url:"/books/filter?"+$("#filter-results").serialize(),
+            method:"GET",
+            success : function(data){
+                var books = JSON.parse(data);
+                if(!books){
+                    console.log("nooooooo");
+                    return;
+                };
                 var viewTable = $("#view-result");
                 viewTable.empty();
                 books.forEach(function(b){

@@ -1,6 +1,7 @@
 package main
 
 import (
+  "log"
   "net/http"
   "database/sql"
   _ "github.com/mattn/go-sqlite3"
@@ -27,6 +28,7 @@ type Book struct {
 
 type page struct {
   Books []Book
+  Filter string
 }
 
 
@@ -129,11 +131,18 @@ func initDB()  {
 }
 
 
-func getBookCollection(books *[]Book, sortCol string, w http.ResponseWriter) bool {
-  if sortCol != "title" && sortCol != "author" && sortCol != "class"{
+func getBookCollection(books *[]Book, sortCol string, filterCol string, w http.ResponseWriter) bool {
+  if sortCol == ""{
     sortCol = "pk"
   }
-  if _, err := dbmap.Select(books, "select * from books order by " + sortCol); err!=nil{
+  var where string
+  where = " "
+  if filterCol == "fiction"{
+    where = " where class between 800 and 900 "
+  } else if filterCol == "nonfiction"{
+    where = " where class not between 800 and 900 "
+  }
+  if _, err := dbmap.Select(books, "select * from books"+where+"order by " + sortCol); err!=nil{
     return false
   }
   return true
@@ -147,16 +156,22 @@ func main() {
 
   // Handeling the main route
   mux.HandleFunc("/",func (w http.ResponseWriter, r *http.Request) {
+    sortBy := sessions.GetSession(r).Get("sortBy")
+    filterBy := sessions.GetSession(r).Get("Filter")
     template, err := ace.Load("templates/index", "", nil)
     checkErr(err, w)
     // Getting the query
-    p := page{Books: []Book{}}
     var sortCol string
-    sortBy := sessions.GetSession(r).Get("sortBy")
+    var filterCol string
     if sortBy != nil{
       sortCol = sortBy.(string)
     }
-    if !getBookCollection(&p.Books, sortCol, w){
+    if filterBy != nil{
+      filterCol = filterBy.(string)
+    }
+    log.Print(filterCol)
+    p := page{Books: []Book{}, Filter: filterCol}
+    if !getBookCollection(&p.Books, sortCol, p.Filter, w){
       return
     }
     // Executing or renderin the template providing the query recieved
@@ -207,12 +222,32 @@ func main() {
 
   mux.HandleFunc("/books", func (w http.ResponseWriter, r *http.Request) {
     var b []Book
+    var filterCol string
+    filterBy := sessions.GetSession(r).Get("Filter")
+    if filterBy != nil{
+      filterCol = filterBy.(string)
+    }
     sortBy := r.FormValue("sortBy")
-    if !getBookCollection(&b, sortBy, w){
+    if !getBookCollection(&b, sortBy, filterCol, w){
       return
     }
     sessions.GetSession(r).Set("sortBy",sortBy)
 
+    err := json.NewEncoder(w).Encode(b)
+    checkErr(err, w)
+  }).Methods("GET")
+
+  mux.HandleFunc("/books/filter", func (w http.ResponseWriter, r *http.Request) {
+    sessions.GetSession(r).Set("Filter", r.FormValue("filterBy"))
+    var b []Book
+    var sortCol string
+    sortBy := sessions.GetSession(r).Get("sortBy")
+    if sortBy != nil{
+      sortCol = sortBy.(string)
+    }
+    if !getBookCollection(&b, sortCol, r.FormValue("filterBy"), w){
+      return
+    }
     err := json.NewEncoder(w).Encode(b)
     checkErr(err, w)
   }).Methods("GET")
