@@ -43,7 +43,7 @@
 
 ## Becoming the librarian
 
- - ### Replacing the default template:
+- ### Replacing the default template:
   - [x] add a new template engine
   - [x] use the new engine to render the template
   - [x] update the template file
