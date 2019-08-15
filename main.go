@@ -64,6 +64,7 @@ type SearchResponse struct {
 func checkErr(err error, w http.ResponseWriter){
   if err != nil{
     http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
   }
 }
 
@@ -251,6 +252,21 @@ func main() {
     err := json.NewEncoder(w).Encode(b)
     checkErr(err, w)
   }).Methods("GET")
+
+
+  // Handeling the login route
+  mux.HandleFunc("/login", func (w http.ResponseWriter, r *http.Request) {
+    if r.FormValue("register") != "" || r.FormValue("login") != ""{
+      http.Redirect(w, r, "/", http.StatusFound)
+      return
+    }
+    
+    template, err := ace.Load("templates/login", "", nil)
+    checkErr(err, w)
+
+    err = template.Execute(w,nil)
+    checkErr(err, w)
+  })
 
   n := negroni.Classic()
   n.Use(sessions.Sessions("your-Library", cookiestore.New([]byte("this-is-safe"))))
