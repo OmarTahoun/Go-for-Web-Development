@@ -74,8 +74,14 @@
   - [x] Adding the sort UI
   - [x] update database query to use sorting
   - [x] remember the latest sort method in sessions
-  
+
 - ### Fiction and nonficiton:
-  - [ ] Add filter UI
-  - [ ] update queries to filter
-  - [ ] Remember user filter choice
+  - [x] Add filter UI
+  - [x] update queries to filter
+  - [x] Remember user filter choice
+
+## Different folks, Different libraries
+- ### Authenticated users only:
+  - [ ] Design Login template
+  - [ ] Build Login route
+  - [ ] Redirect Authenticated users to main page
