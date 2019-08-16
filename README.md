@@ -82,6 +82,11 @@
 
 ## Different folks, Different libraries
 - ### Authenticated users only:
-  - [ ] Design Login template
-  - [ ] Build Login route
-  - [ ] Redirect Authenticated users to main page
+  - [x] Design Login template
+  - [x] Build Login route
+  - [x] Redirect Authenticated users to main page
+
+- ### Creating users securely:
+  - [ ] Get bcrypt package
+  - [ ] Create user table
+  - [ ] Store users in database

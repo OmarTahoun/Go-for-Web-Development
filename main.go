@@ -10,6 +10,7 @@ import (
   "net/url"
   "io/ioutil"
   "strconv"
+  "golang.org/x/crypto/bcrypt"
   "github.com/urfave/negroni"
   "github.com/goincremental/negroni-sessions"
   "github.com/goincremental/negroni-sessions/cookiestore"
@@ -57,6 +58,12 @@ type BookResponse struct {
 // A slice of the response content
 type SearchResponse struct {
   Results []SearchResult `xml:"works>work"`
+}
+
+// User type to be used with the database
+type User struct {
+    Username string `db:"username"`
+    Secret []byte `db:"secret"`
 }
 
 
@@ -260,7 +267,7 @@ func main() {
       http.Redirect(w, r, "/", http.StatusFound)
       return
     }
-    
+
     template, err := ace.Load("templates/login", "", nil)
     checkErr(err, w)
 
