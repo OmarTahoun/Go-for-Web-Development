@@ -66,6 +66,10 @@ type User struct {
     Secret []byte `db:"secret"`
 }
 
+type LoginPage struct{
+  Error string
+}
+
 
 // A simple function that checks for error given an error object and a response object
 func checkErr(err error, w http.ResponseWriter){
@@ -135,6 +139,7 @@ func initDB()  {
   dbmap = &gorp.DbMap{Db: database, Dialect: gorp.SqliteDialect{}}
 
   dbmap.AddTableWithName(Book{}, "books").SetKeys(true, "pk")
+  dbmap.AddTableWithName(User{}, "users").SetKeys(false, "username")
   dbmap.CreateTablesIfNotExists()
 }
 
@@ -263,15 +268,39 @@ func main() {
 
   // Handeling the login route
   mux.HandleFunc("/login", func (w http.ResponseWriter, r *http.Request) {
-    if r.FormValue("register") != "" || r.FormValue("login") != ""{
-      http.Redirect(w, r, "/", http.StatusFound)
-      return
+    var p LoginPage
+    if r.FormValue("register") != "" {
+      secret, _ := bcrypt.GenerateFromPassword([]byte(r.FormValue("password")), bcrypt.DefaultCost)
+      user := User{r.FormValue("username"), secret}
+      err := dbmap.Insert(&user)
+      if err != nil {
+        p.Error = err.Error( )
+      } else {
+        http.Redirect(w, r, "/", http.StatusFound)
+        return
+      }
+    }else if r.FormValue("login") != ""{
+      user, err := dbmap.Get(User{}, r.FormValue("username"))
+      if err != nil {
+        p.Error = err.Error()
+      }else if user == nil {
+        p.Error = "Invalid Username or Password"
+      }else {
+        u := user.(*User)
+        err = bcrypt.CompareHashAndPassword(u.Secret, []byte(r.FormValue("password")))
+        if err != nil {
+          p.Error = err.Error()
+        }else {
+          http.Redirect(w, r, "/", http.StatusFound)
+          return
+        }
+      }
     }
 
     template, err := ace.Load("templates/login", "", nil)
     checkErr(err, w)
 
-    err = template.Execute(w,nil)
+    err = template.Execute(w,p)
     checkErr(err, w)
   })
 
