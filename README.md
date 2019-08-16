@@ -87,6 +87,6 @@
   - [x] Redirect Authenticated users to main page
 
 - ### Creating users securely:
-  - [ ] Get bcrypt package
-  - [ ] Create user table
-  - [ ] Store users in database
+  - [x] Get bcrypt package
+  - [x] Create user table
+  - [x] Store users in database
