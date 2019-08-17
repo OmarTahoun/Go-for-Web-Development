@@ -1,7 +1,6 @@
 package main
 
 import (
-  "log"
   "net/http"
   "database/sql"
   _ "github.com/mattn/go-sqlite3"
@@ -30,6 +29,7 @@ type Book struct {
 type page struct {
   Books []Book
   Filter string
+  User string
 }
 
 
@@ -87,6 +87,22 @@ func verifyDatabase(w http.ResponseWriter, r *http.Request, next http.HandlerFun
     return
   }
   next(w,r)
+}
+
+func verifyUser(w http.ResponseWriter, r *http.Request, next http.HandlerFunc){
+  if r.URL.Path == "/login"{
+    next(w,r)
+    return
+  }
+  user := sessions.GetSession(r).Get("user")
+  if user != ""{
+    username, _ := dbmap.Get(User{}, user)
+    if username !=nil {
+      next(w,r)
+      return
+    }
+  }
+  http.Redirect(w,r,"/login", http.StatusTemporaryRedirect)
 }
 
 
@@ -171,19 +187,23 @@ func main() {
   mux.HandleFunc("/",func (w http.ResponseWriter, r *http.Request) {
     sortBy := sessions.GetSession(r).Get("sortBy")
     filterBy := sessions.GetSession(r).Get("Filter")
+    user := sessions.GetSession(r).Get("user")
     template, err := ace.Load("templates/index", "", nil)
     checkErr(err, w)
     // Getting the query
     var sortCol string
     var filterCol string
+    var username string
     if sortBy != nil{
       sortCol = sortBy.(string)
     }
     if filterBy != nil{
       filterCol = filterBy.(string)
     }
-    log.Print(filterCol)
-    p := page{Books: []Book{}, Filter: filterCol}
+    if user!=nil{
+      username = user.(string)
+    }
+    p := page{Books: []Book{}, Filter: filterCol, User: username}
     if !getBookCollection(&p.Books, sortCol, p.Filter, w){
       return
     }
@@ -276,6 +296,7 @@ func main() {
       if err != nil {
         p.Error = err.Error( )
       } else {
+        sessions.GetSession(r).Set("user", user.Username)
         http.Redirect(w, r, "/", http.StatusFound)
         return
       }
@@ -291,6 +312,7 @@ func main() {
         if err != nil {
           p.Error = err.Error()
         }else {
+          sessions.GetSession(r).Set("user", u.Username)
           http.Redirect(w, r, "/", http.StatusFound)
           return
         }
@@ -304,9 +326,18 @@ func main() {
     checkErr(err, w)
   })
 
+  mux.HandleFunc("/logout", func (w http.ResponseWriter, r *http.Request) {
+    sessions.GetSession(r).Set("user", nil)
+    sessions.GetSession(r).Set("Filter", nil)
+    sessions.GetSession(r).Set("sortBy", nil)
+
+    http.Redirect(w, r, "/login", http.StatusFound)
+  })
+
   n := negroni.Classic()
   n.Use(sessions.Sessions("your-Library", cookiestore.New([]byte("this-is-safe"))))
   n.Use(negroni.HandlerFunc(verifyDatabase))
+  n.Use(negroni.HandlerFunc(verifyUser))
   n.UseHandler(mux)
   //  Listining to the port
   n.Run(":8080")

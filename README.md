@@ -90,3 +90,8 @@
   - [x] Get bcrypt package
   - [x] Create user table
   - [x] Store users in database
+
+- ### set sessions for users:
+  - [x] Add user to session
+  - [x] check if a user is logged in
+  - [x] add logout
