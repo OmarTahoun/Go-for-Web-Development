@@ -95,3 +95,8 @@
   - [x] Add user to session
   - [x] check if a user is logged in
   - [x] add logout
+
+- ### Different Library for Different users:
+  - [ ] Adding a foreign key (the username) to the books table, to associate a book with a user
+  - [ ] update the Database mapping
+  - [ ] fetch only books of specific user
