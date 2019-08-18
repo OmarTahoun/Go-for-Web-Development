@@ -24,6 +24,7 @@ type Book struct {
   Author string `db:"author"`
   Class string  `db:"class"`
   ID string `db:"id"`
+  User string `db:"user"`
 }
 
 type page struct {
@@ -94,7 +95,7 @@ func verifyUser(w http.ResponseWriter, r *http.Request, next http.HandlerFunc){
     next(w,r)
     return
   }
-  user := sessions.GetSession(r).Get("user")
+  user := getStringFromSession(r,"user")
   if user != ""{
     username, _ := dbmap.Get(User{}, user)
     if username !=nil {
@@ -105,6 +106,13 @@ func verifyUser(w http.ResponseWriter, r *http.Request, next http.HandlerFunc){
   http.Redirect(w,r,"/login", http.StatusTemporaryRedirect)
 }
 
+func getStringFromSession(r *http.Request, key string) string {
+  var strVal string
+  if val := sessions.GetSession(r).Get(key); val != nil {
+    strVal = val.(string)
+  }
+  return strVal
+}
 
 // Sending a query to the API
 func callAPI(url string) ([]byte, error)  {
@@ -160,18 +168,18 @@ func initDB()  {
 }
 
 
-func getBookCollection(books *[]Book, sortCol string, filterCol string, w http.ResponseWriter) bool {
+func getBookCollection(books *[]Book, sortCol string, filterCol string, username string, w http.ResponseWriter) bool {
   if sortCol == ""{
     sortCol = "pk"
   }
   var where string
-  where = " "
+  where = " where user=?"
   if filterCol == "fiction"{
-    where = " where class between 800 and 900 "
+    where += " and class between 800 and 900 "
   } else if filterCol == "nonfiction"{
-    where = " where class not between 800 and 900 "
+    where += " and class not between 800 and 900 "
   }
-  if _, err := dbmap.Select(books, "select * from books"+where+"order by " + sortCol); err!=nil{
+  if _, err := dbmap.Select(books, "select * from books"+where+"order by " + sortCol, username); err!=nil{
     return false
   }
   return true
@@ -185,26 +193,13 @@ func main() {
 
   // Handeling the main route
   mux.HandleFunc("/",func (w http.ResponseWriter, r *http.Request) {
-    sortBy := sessions.GetSession(r).Get("sortBy")
-    filterBy := sessions.GetSession(r).Get("Filter")
-    user := sessions.GetSession(r).Get("user")
+    sortBy := getStringFromSession(r,"sortBy")
+    filterBy := getStringFromSession(r,"Filter")
+    user := getStringFromSession(r,"user")
     template, err := ace.Load("templates/index", "", nil)
     checkErr(err, w)
-    // Getting the query
-    var sortCol string
-    var filterCol string
-    var username string
-    if sortBy != nil{
-      sortCol = sortBy.(string)
-    }
-    if filterBy != nil{
-      filterCol = filterBy.(string)
-    }
-    if user!=nil{
-      username = user.(string)
-    }
-    p := page{Books: []Book{}, Filter: filterCol, User: username}
-    if !getBookCollection(&p.Books, sortCol, p.Filter, w){
+    p := page{Books: []Book{}, Filter: filterBy, User: user}
+    if !getBookCollection(&p.Books, sortBy, p.Filter, p.User, w){
       return
     }
     // Executing or renderin the template providing the query recieved
@@ -239,6 +234,8 @@ func main() {
       Title: book.BookData.Title,
       Author: book.BookData.Author,
       Class: book.Classification.MostPopular,
+      ID: r.FormValue("id"),
+      User: getStringFromSession(r, "user"),
     }
     err = dbmap.Insert(&b)
     checkErr(err,w)
@@ -248,20 +245,23 @@ func main() {
 
   mux.HandleFunc("/books/{pk}", func (w http.ResponseWriter, r *http.Request) {
     pk, _ := strconv.ParseInt(gmux.Vars(r)["pk"], 10, 64)
-    _, err := dbmap.Delete(&Book{pk,"","","",""})
+    var b Book
+    user := getStringFromSession(r, "user")
+    err := dbmap.SelectOne(&b, "select * from books where pk = ? and user=?", pk, user)
+    if err != nil{
+      http.Error(w, err.Error(), http.StatusBadRequest)
+      return
+    }
+    _, err = dbmap.Delete(&b)
     checkErr(err, w)
     w.WriteHeader(http.StatusOK)
   }).Methods("DELETE")
 
   mux.HandleFunc("/books", func (w http.ResponseWriter, r *http.Request) {
     var b []Book
-    var filterCol string
-    filterBy := sessions.GetSession(r).Get("Filter")
-    if filterBy != nil{
-      filterCol = filterBy.(string)
-    }
+    filterBy := getStringFromSession(r,"Filter")
     sortBy := r.FormValue("sortBy")
-    if !getBookCollection(&b, sortBy, filterCol, w){
+    if !getBookCollection(&b, sortBy, filterBy, getStringFromSession(r,"user"), w){
       return
     }
     sessions.GetSession(r).Set("sortBy",sortBy)
@@ -273,12 +273,8 @@ func main() {
   mux.HandleFunc("/books/filter", func (w http.ResponseWriter, r *http.Request) {
     sessions.GetSession(r).Set("Filter", r.FormValue("filterBy"))
     var b []Book
-    var sortCol string
-    sortBy := sessions.GetSession(r).Get("sortBy")
-    if sortBy != nil{
-      sortCol = sortBy.(string)
-    }
-    if !getBookCollection(&b, sortCol, r.FormValue("filterBy"), w){
+    sortBy := getStringFromSession(r, "sortBy")
+    if !getBookCollection(&b, sortBy, r.FormValue("filterBy"), getStringFromSession(r,"user"), w){
       return
     }
     err := json.NewEncoder(w).Encode(b)
